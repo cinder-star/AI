@@ -1,20 +1,42 @@
+import numpy as np
+
 class Node:
-    state = None
+    state = []
     parent = None
-    actions = None
+    actions = []
     g_cost = 0.0
     h_cost = 0.0
+    n = 0
 
-    def __init__(self):
-        state = self.state
-        parent = self.parent
-        actions = self.actions
-        g_cost = self.g_cost
-        h_cost = self.h_cost
+    def __init__(self, state, parent, actions, g_cost, h_cost, n):
+        self.state = state
+        self.parent = parent
+        self.actions = actions
+        self.g_cost = g_cost
+        self.h_cost = h_cost
+        self.n = n
 
     def take_action(self, action):
         new_state = self.state
-
+        position = -1
+        for i in range(self.n):
+            for j in range(self.n):
+                if new_state[i][j] == -1:
+                    position = (i, j)
+                    break
+        if action == "u":
+            new_state[position[0]][position[1]] = new_state[position[0]+1][position[1]]
+            new_state[position[0]+1][position[1]] = -1
+        elif action == "r":
+            new_state[position[0]][position[1]] = new_state[position[0]][position[1]-1]
+            new_state[position[0]][position[1]-1] = -1
+        elif action == "l":
+            new_state[position[0]][position[1]] = new_state[position[0]][position[1]+1]
+            new_state[position[0]][position[1]+1] = -1
+        else:
+            new_state[position[0]][position[1]] = new_state[position[0]-1][position[1]]
+            new_state[position[0]-1][position[1]] = -1
+        return new_state
 
 final_state = None
 
@@ -32,7 +54,7 @@ def get_final_state(n):
         for j in range(n):
             row.append(i*n+j)
         final_state.append(row)
-    return final_state
+    return np.array(final_state)
 
 def get_misplaced_tiles(current_state):
     misplaced_tiles = 0
@@ -48,5 +70,9 @@ def build_current_state():
 
 
 if __name__ == ("__main__"):
-    final_state = get_final_state(4)
-    print(final_state)
+    final_state = get_final_state(3)
+    state = np.array([[1, -1, 2],[3, 4, 5],[6, 7, 8]])
+    print(state)
+    new_state = Node(state=state, parent=final_state, actions=["u", "l", "r"], g_cost=0.0, h_cost=0.0, n=3)
+    new_state_matrix = new_state.take_action("u")
+    print(new_state_matrix)
