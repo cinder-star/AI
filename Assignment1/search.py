@@ -1,4 +1,5 @@
 import numpy as np
+import queue
 
 class Node:
     state = []
@@ -40,6 +41,14 @@ class Node:
 
 final_state = None
 
+def goal_test(state):
+    n = len(state)
+    for i in range(n):
+        for j in range(n):
+            if state[i][j] != final_state[i][j]:
+                return False
+    return True
+
 def get_final_state(n):
     final_state = []
     row = []
@@ -65,8 +74,29 @@ def get_misplaced_tiles(current_state):
                 misplaced_tiles = misplaced_tiles + 1
     return misplaced_tiles
 
-def build_current_state():
+def child_node(state, action):
     pass
+
+def breadth_first_search(initial_state):
+    current_state = initial_state
+    path_cost = 0
+    if goal_test(initial_state):
+        return True
+    frontier = queue.Queue()
+    frontier.put(current_state)
+    explored = set()
+    while True:
+        if frontier.empty():
+            return False
+        current_state = frontier.get()
+        explored.add(current_state)
+        for action in current_state.actions:
+            child = child_node(current_state, action)
+            if child not in explored or child not in frontier:
+                if goal_test(child):
+                    return True
+                frontier.put(child)
+
 
 
 if __name__ == ("__main__"):
@@ -76,3 +106,4 @@ if __name__ == ("__main__"):
     new_state = Node(state=state, parent=final_state, actions=["u", "l", "r"], g_cost=0.0, h_cost=0.0, n=3)
     new_state_matrix = new_state.take_action("u")
     print(new_state_matrix)
+    print(goal_test(final_state))
