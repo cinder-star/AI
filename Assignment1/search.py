@@ -1,7 +1,9 @@
 import numpy as np
 import queue
+from collections import deque
+from hashlib import blake2b
 
-class Node:
+class Node(object):
     state = []
     parent = None
     actions = []
@@ -9,7 +11,7 @@ class Node:
     h_cost = 0.0
     n = 0
 
-    def __init__(self, state, parent, actions, g_cost, h_cost, n):
+    def __init__(self, state=[], parent=None, actions=[], g_cost=0.0, h_cost=0.0, n=0):
         self.state = state
         self.parent = parent
         self.actions = actions
@@ -18,7 +20,7 @@ class Node:
         self.n = n
 
     def take_action(self, action):
-        new_state = self.state
+        new_state = np.array(self.state, copy=True)
         position = -1
         for i in range(self.n):
             for j in range(self.n):
@@ -39,13 +41,42 @@ class Node:
             new_state[position[0]-1][position[1]] = -1
         return new_state
 
+    def __contains__(self, item):
+        n = item.n
+        for i in range(n):
+            for j in range(n):
+                if item.state[i][j] != self.state[i][j]:
+                    return False
+        return True
+    
+    def __eq__(self, item):
+        if self.__hash__() == item.__hash__():
+            return True
+        return False
+
+    def __str__(self):
+        return str(self.state)
+
+    def __hash__(self):
+        a = self.state.view(np.uint8)
+        return int(blake2b(a, digest_size=8).hexdigest(), 16)
+
 final_state = None
 
-def goal_test(state):
-    n = len(state)
+def solution(node):
+    if not node.parent:
+        print(node)
+        print()
+        return
+    solution(node.parent)
+    print(node)
+    print()
+
+def goal_test(node):
+    n = len(node.state)
     for i in range(n):
         for j in range(n):
-            if state[i][j] != final_state[i][j]:
+            if node.state[i][j] != final_state.state[i][j]:
                 return False
     return True
 
@@ -63,7 +94,7 @@ def get_final_state(n):
         for j in range(n):
             row.append(i*n+j)
         final_state.append(row)
-    return np.array(final_state)
+    return Node(state=np.array(final_state),n=n)
 
 def get_misplaced_tiles(current_state):
     misplaced_tiles = 0
@@ -74,36 +105,60 @@ def get_misplaced_tiles(current_state):
                 misplaced_tiles = misplaced_tiles + 1
     return misplaced_tiles
 
+def get_actions(state):
+    n = len(state)
+    for i in range(n):
+        for j in range(n):
+            if state[i][j] == -1:
+                break
+    actions = []
+    if i != n-1:
+        actions.append("u")
+    if i != 0:
+        actions.append("d")
+    if j != n-1:
+        actions.append("l")
+    if j != 0:
+        actions.append("r")
+    return actions
+
 def child_node(state, action):
-    pass
+    new_state = state.take_action(action)
+    new_actions = get_actions(new_state)
+    return Node(state=new_state, parent=state, actions=new_actions, n=len(new_state))
 
 def breadth_first_search(initial_state):
     current_state = initial_state
     path_cost = 0
     if goal_test(initial_state):
-        return True
-    frontier = queue.Queue()
-    frontier.put(current_state)
+        return solution(initial_state)
+    frontier = deque()
+    frontier.append(current_state)
     explored = set()
     while True:
-        if frontier.empty():
+        if not frontier:
             return False
-        current_state = frontier.get()
+        current_state = frontier.popleft()
         explored.add(current_state)
         for action in current_state.actions:
             child = child_node(current_state, action)
             if child not in explored or child not in frontier:
                 if goal_test(child):
-                    return True
-                frontier.put(child)
+                    return solution(child)
+                frontier.append(child)
 
+def build_initial_state():
+    n = int(input())
+    initial_state = []
+    for i in range(n):
+        z = input()
+        x = [int(y) for y in z.split()]
+        initial_state.append(x)
+    actions = get_actions(initial_state)
+    return Node(state=np.array(initial_state), actions=actions, n=n)
 
 
 if __name__ == ("__main__"):
     final_state = get_final_state(3)
-    state = np.array([[1, -1, 2],[3, 4, 5],[6, 7, 8]])
-    print(state)
-    new_state = Node(state=state, parent=final_state, actions=["u", "l", "r"], g_cost=0.0, h_cost=0.0, n=3)
-    new_state_matrix = new_state.take_action("u")
-    print(new_state_matrix)
-    print(goal_test(final_state))
+    lst = build_initial_state()
+    breadth_first_search(lst)
