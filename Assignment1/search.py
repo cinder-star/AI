@@ -1,6 +1,7 @@
 import numpy as np
 import queue
 from collections import deque
+from queue import PriorityQueue
 from hashlib import blake2b
 
 class Node(object):
@@ -60,6 +61,9 @@ class Node(object):
     def __hash__(self):
         a = self.state.view(np.uint8)
         return int(blake2b(a, digest_size=8).hexdigest(), 16)
+
+    def __lt__(self, value):
+        return self.g_cost < value.g_cost
 
 final_state = None
 
@@ -127,6 +131,12 @@ def child_node(state, action):
     new_actions = get_actions(new_state)
     return Node(state=new_state, parent=state, actions=new_actions, n=len(new_state))
 
+def higher_cost(queue, state):
+    for item in queue:
+        if item == state:
+            return item
+    return None
+
 def breadth_first_search(initial_state):
     current_state = initial_state
     path_cost = 0
@@ -142,10 +152,33 @@ def breadth_first_search(initial_state):
         explored.add(current_state)
         for action in current_state.actions:
             child = child_node(current_state, action)
-            if child not in explored or child not in frontier:
+            if child not in explored and child not in frontier:
                 if goal_test(child):
                     return solution(child)
                 frontier.append(child)
+
+def uniform_cost_search(initial_state):
+    path_cost = 0
+    frontier = PriorityQueue()
+    frontier.put(initial_state)
+    explored = set()
+    while True:
+        if frontier.empty():
+            return False
+        node = frontier.get()
+        if goal_test(node):
+            return solution(node)
+        explored.add(node)
+        for action in node.actions:
+            child = child_node(node, action)
+            child.g_cost = node.g_cost+1
+            higher_cost_node = higher_cost(frontier.queue,child)
+            if child not in frontier.queue and child not in explored:
+                frontier.put(child)
+            elif higher_cost_node and higher_cost_node.g_cost > child.g_cost:
+                frontier.queue.remove(higher_cost_node)
+                frontier.put(child)
+            
 
 def build_initial_state():
     n = int(input())
@@ -161,4 +194,5 @@ def build_initial_state():
 if __name__ == ("__main__"):
     final_state = get_final_state(3)
     lst = build_initial_state()
-    breadth_first_search(lst)
+    # breadth_first_search(lst)
+    uniform_cost_search(lst)
