@@ -11,14 +11,16 @@ class Node(object):
     g_cost = 0.0
     h_cost = 0.0
     n = 0
+    depth = 0
 
-    def __init__(self, state=[], parent=None, actions=[], g_cost=0.0, h_cost=0.0, n=0):
+    def __init__(self, state=[], parent=None, actions=[], g_cost=0.0, h_cost=0.0, n=0, depth=0):
         self.state = state
         self.parent = parent
         self.actions = actions
         self.g_cost = g_cost
         self.h_cost = h_cost
         self.n = n
+        self.depth = depth
 
     def take_action(self, action):
         new_state = np.array(self.state, copy=True)
@@ -69,12 +71,10 @@ final_state = None
 
 def solution(node):
     if not node.parent:
-        print(node)
-        print()
-        return
-    solution(node.parent)
-    print(node)
-    print()
+        return [node]
+    tree = solution(node.parent)
+    tree.append(node)
+    return tree
 
 def goal_test(node):
     n = len(node.state)
@@ -129,7 +129,7 @@ def get_actions(state):
 def child_node(state, action):
     new_state = state.take_action(action)
     new_actions = get_actions(new_state)
-    return Node(state=new_state, parent=state, actions=new_actions, n=len(new_state))
+    return Node(state=new_state, parent=state, actions=new_actions, n=len(new_state), depth=state.depth+1)
 
 def higher_cost(queue, state):
     for item in queue:
@@ -178,7 +178,38 @@ def uniform_cost_search(initial_state):
             elif higher_cost_node and higher_cost_node.g_cost > child.g_cost:
                 frontier.queue.remove(higher_cost_node)
                 frontier.put(child)
-            
+
+def recursive_dls(initial_state, limit):
+    if goal_test(initial_state):
+        return solution(initial_state)
+    elif limit == 0:
+        return -1
+    else:
+        cutoff_occured = False
+        for action in initial_state.actions:
+            child = child_node(initial_state, action)
+            result = recursive_dls(child, limit-1)
+            if result == -1:
+                cutoff_occured = True
+            elif result:
+                return result
+        if cutoff_occured:
+            return -1
+        else:
+            return False
+    
+
+def depth_limited_search(initial_state, limit):
+    return recursive_dls(initial_state, limit)
+
+def iterative_depth_limited_search(initial_state):
+    depth = 0
+    while True:
+        result = recursive_dls(initial_state, depth)
+        if result != -1:
+            return result
+        depth = depth + 1
+
 
 def build_initial_state():
     n = int(input())
@@ -194,5 +225,9 @@ def build_initial_state():
 if __name__ == ("__main__"):
     final_state = get_final_state(3)
     lst = build_initial_state()
-    # breadth_first_search(lst)
-    uniform_cost_search(lst)
+    # answers = breadth_first_search(lst)
+    # answer = uniform_cost_search(lst)
+    # answers = depth_limited_search(lst, 9)
+    answers = iterative_depth_limited_search(lst)
+    for ans in answers:
+        print(ans)
