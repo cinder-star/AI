@@ -5,6 +5,7 @@ from queue import PriorityQueue
 from hashlib import blake2b
 from math import inf
 
+
 class Node(object):
     state = []
     parent = None
@@ -14,7 +15,9 @@ class Node(object):
     n = 0
     depth = 0
 
-    def __init__(self, state=[], parent=None, actions=[], g_cost=0.0, h_cost=0.0, n=0, depth=0):
+    def __init__(
+        self, state=[], parent=None, actions=[], g_cost=0.0, h_cost=0.0, n=0, depth=0
+    ):
         self.state = state
         self.parent = parent
         self.actions = actions
@@ -32,17 +35,25 @@ class Node(object):
                     position = (i, j)
                     break
         if action == "u":
-            new_state[position[0]][position[1]] = new_state[position[0]+1][position[1]]
-            new_state[position[0]+1][position[1]] = -1
+            new_state[position[0]][position[1]] = new_state[position[0] + 1][
+                position[1]
+            ]
+            new_state[position[0] + 1][position[1]] = -1
         elif action == "r":
-            new_state[position[0]][position[1]] = new_state[position[0]][position[1]-1]
-            new_state[position[0]][position[1]-1] = -1
+            new_state[position[0]][position[1]] = new_state[position[0]][
+                position[1] - 1
+            ]
+            new_state[position[0]][position[1] - 1] = -1
         elif action == "l":
-            new_state[position[0]][position[1]] = new_state[position[0]][position[1]+1]
-            new_state[position[0]][position[1]+1] = -1
+            new_state[position[0]][position[1]] = new_state[position[0]][
+                position[1] + 1
+            ]
+            new_state[position[0]][position[1] + 1] = -1
         else:
-            new_state[position[0]][position[1]] = new_state[position[0]-1][position[1]]
-            new_state[position[0]-1][position[1]] = -1
+            new_state[position[0]][position[1]] = new_state[position[0] - 1][
+                position[1]
+            ]
+            new_state[position[0] - 1][position[1]] = -1
         return new_state
 
     def __contains__(self, item):
@@ -52,7 +63,7 @@ class Node(object):
                 if item.state[i][j] != self.state[i][j]:
                     return False
         return True
-    
+
     def __eq__(self, item):
         if self.__hash__() == item.__hash__():
             return True
@@ -68,7 +79,9 @@ class Node(object):
     def __lt__(self, value):
         return self.g_cost < value.g_cost
 
+
 final_state = None
+
 
 def solution(node):
     if not node.parent:
@@ -76,6 +89,7 @@ def solution(node):
     tree = solution(node.parent)
     tree.append(node)
     return tree
+
 
 def goal_test(node):
     n = len(node.state)
@@ -85,21 +99,23 @@ def goal_test(node):
                 return False
     return True
 
+
 def get_final_state(n):
     final_state = []
     row = []
     for i in range(n):
-        if i==0:
+        if i == 0:
             row.append(-1)
         else:
             row.append(i)
     final_state.append(row)
-    for i in range(1,n):
+    for i in range(1, n):
         row = []
         for j in range(n):
-            row.append(i*n+j)
+            row.append(i * n + j)
         final_state.append(row)
-    return Node(state=np.array(final_state),n=n)
+    return Node(state=np.array(final_state), n=n)
+
 
 def get_misplaced_tiles(current_state):
     misplaced_tiles = 0
@@ -110,6 +126,7 @@ def get_misplaced_tiles(current_state):
                 misplaced_tiles = misplaced_tiles + 1
     return misplaced_tiles
 
+
 def get_actions(state):
     n = len(state)
     for i in range(n):
@@ -117,26 +134,36 @@ def get_actions(state):
             if state[i][j] == -1:
                 break
     actions = []
-    if i != n-1:
+    if i != n - 1:
         actions.append("u")
     if i != 0:
         actions.append("d")
-    if j != n-1:
+    if j != n - 1:
         actions.append("l")
     if j != 0:
         actions.append("r")
     return actions
 
+
 def child_node(state, action):
     new_state = state.take_action(action)
     new_actions = get_actions(new_state)
-    return Node(state=new_state, parent=state, actions=new_actions, n=len(new_state), h_cost=get_misplaced_tiles(new_state), depth=state.depth+1)
+    return Node(
+        state=new_state,
+        parent=state,
+        actions=new_actions,
+        n=len(new_state),
+        h_cost=get_misplaced_tiles(new_state),
+        depth=state.depth + 1,
+    )
+
 
 def higher_cost(queue, state):
     for item in queue:
         if item == state:
             return item
     return None
+
 
 def breadth_first_search(initial_state):
     current_state = initial_state
@@ -158,6 +185,7 @@ def breadth_first_search(initial_state):
                     return solution(child)
                 frontier.append(child)
 
+
 def uniform_cost_search(initial_state):
     path_cost = 0
     frontier = PriorityQueue()
@@ -172,13 +200,14 @@ def uniform_cost_search(initial_state):
         explored.add(node)
         for action in node.actions:
             child = child_node(node, action)
-            child.g_cost = node.g_cost+1
-            higher_cost_node = higher_cost(frontier.queue,child)
+            child.g_cost = node.g_cost + 1
+            higher_cost_node = higher_cost(frontier.queue, child)
             if child not in frontier.queue and child not in explored:
                 frontier.put(child)
             elif higher_cost_node and higher_cost_node.g_cost > child.g_cost:
                 frontier.queue.remove(higher_cost_node)
                 frontier.put(child)
+
 
 def recursive_dls(initial_state, limit):
     if goal_test(initial_state):
@@ -189,7 +218,7 @@ def recursive_dls(initial_state, limit):
         cutoff_occured = False
         for action in initial_state.actions:
             child = child_node(initial_state, action)
-            result = recursive_dls(child, limit-1)
+            result = recursive_dls(child, limit - 1)
             if result == -1:
                 cutoff_occured = True
             elif result:
@@ -198,10 +227,11 @@ def recursive_dls(initial_state, limit):
             return -1
         else:
             return False
-    
+
 
 def depth_limited_search(initial_state, limit):
     return recursive_dls(initial_state, limit)
+
 
 def iterative_depth_limited_search(initial_state):
     depth = 0
@@ -210,6 +240,7 @@ def iterative_depth_limited_search(initial_state):
         if result != -1:
             return result
         depth = depth + 1
+
 
 def greedy_best_first_search(initial_state):
     path_cost = initial_state.h_cost
@@ -227,6 +258,7 @@ def greedy_best_first_search(initial_state):
             return False
         else:
             node = current_child
+
 
 def a_star(initial_state):
     path_cost = inf
@@ -254,7 +286,12 @@ def build_initial_state():
         x = [int(y) for y in z.split()]
         initial_state.append(x)
     actions = get_actions(initial_state)
-    return Node(state=np.array(initial_state), h_cost=get_misplaced_tiles(initial_state), actions=actions, n=n)
+    return Node(
+        state=np.array(initial_state),
+        h_cost=get_misplaced_tiles(initial_state),
+        actions=actions,
+        n=n,
+    )
 
 
 if __name__ == ("__main__"):
