@@ -3,6 +3,7 @@ import queue
 from collections import deque
 from queue import PriorityQueue
 from hashlib import blake2b
+from math import inf
 
 class Node(object):
     state = []
@@ -227,6 +228,23 @@ def greedy_best_first_search(initial_state):
         else:
             node = current_child
 
+def a_star(initial_state):
+    path_cost = inf
+    node = initial_state
+    while True:
+        if goal_test(node):
+            return solution(node)
+        current_child = None
+        for action in node.actions:
+            child = child_node(node, action)
+            if child.h_cost + node.g_cost < path_cost:
+                current_child = child
+                path_cost = child.h_cost + node.g_cost
+        if not current_child:
+            return False
+        else:
+            node = current_child
+
 
 def build_initial_state():
     n = int(input())
@@ -246,6 +264,7 @@ if __name__ == ("__main__"):
     # answer = uniform_cost_search(lst)
     # answers = depth_limited_search(lst, 9)
     # answers = iterative_depth_limited_search(lst)
-    answers = greedy_best_first_search(lst)
+    # answers = greedy_best_first_search(lst)
+    answers = a_star(lst)
     for ans in answers:
         print(ans)
