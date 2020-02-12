@@ -105,7 +105,7 @@ def get_misplaced_tiles(current_state):
     n = len(current_state)
     for i in range(n):
         for j in range(n):
-            if current_state[i][j] != final_state[i][j]:
+            if current_state[i][j] != final_state.state[i][j]:
                 misplaced_tiles = misplaced_tiles + 1
     return misplaced_tiles
 
@@ -129,7 +129,7 @@ def get_actions(state):
 def child_node(state, action):
     new_state = state.take_action(action)
     new_actions = get_actions(new_state)
-    return Node(state=new_state, parent=state, actions=new_actions, n=len(new_state), depth=state.depth+1)
+    return Node(state=new_state, parent=state, actions=new_actions, n=len(new_state), h_cost=get_misplaced_tiles(new_state), depth=state.depth+1)
 
 def higher_cost(queue, state):
     for item in queue:
@@ -210,6 +210,23 @@ def iterative_depth_limited_search(initial_state):
             return result
         depth = depth + 1
 
+def greedy_best_first_search(initial_state):
+    path_cost = initial_state.h_cost
+    node = initial_state
+    while True:
+        if goal_test(node):
+            return solution(node)
+        current_child = None
+        for action in node.actions:
+            child = child_node(node, action)
+            if child.h_cost < path_cost:
+                current_child = child
+                path_cost = child.h_cost
+        if not current_child:
+            return False
+        else:
+            node = current_child
+
 
 def build_initial_state():
     n = int(input())
@@ -219,7 +236,7 @@ def build_initial_state():
         x = [int(y) for y in z.split()]
         initial_state.append(x)
     actions = get_actions(initial_state)
-    return Node(state=np.array(initial_state), actions=actions, n=n)
+    return Node(state=np.array(initial_state), h_cost=get_misplaced_tiles(initial_state), actions=actions, n=n)
 
 
 if __name__ == ("__main__"):
@@ -228,6 +245,7 @@ if __name__ == ("__main__"):
     # answers = breadth_first_search(lst)
     # answer = uniform_cost_search(lst)
     # answers = depth_limited_search(lst, 9)
-    answers = iterative_depth_limited_search(lst)
+    # answers = iterative_depth_limited_search(lst)
+    answers = greedy_best_first_search(lst)
     for ans in answers:
         print(ans)
