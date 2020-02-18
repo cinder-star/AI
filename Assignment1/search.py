@@ -35,25 +35,25 @@ class Node(object):
                     position = (i, j)
                     break
         if action == "u":
-            new_state[position[0]][position[1]] = new_state[position[0] + 1][
-                position[1]
-            ]
-            new_state[position[0] + 1][position[1]] = -1
-        elif action == "r":
-            new_state[position[0]][position[1]] = new_state[position[0]][
-                position[1] - 1
-            ]
-            new_state[position[0]][position[1] - 1] = -1
-        elif action == "l":
-            new_state[position[0]][position[1]] = new_state[position[0]][
-                position[1] + 1
-            ]
-            new_state[position[0]][position[1] + 1] = -1
-        else:
             new_state[position[0]][position[1]] = new_state[position[0] - 1][
                 position[1]
             ]
             new_state[position[0] - 1][position[1]] = -1
+        elif action == "r":
+            new_state[position[0]][position[1]] = new_state[position[0]][
+                position[1] + 1
+            ]
+            new_state[position[0]][position[1] + 1] = -1
+        elif action == "l":
+            new_state[position[0]][position[1]] = new_state[position[0]][
+                position[1] - 1
+            ]
+            new_state[position[0]][position[1] - 1] = -1
+        elif action == "d":
+            new_state[position[0]][position[1]] = new_state[position[0] + 1][
+                position[1]
+            ]
+            new_state[position[0] + 1][position[1]] = -1
         return new_state
 
     def __contains__(self, item):
@@ -85,10 +85,10 @@ final_state = None
 
 def solution(node):
     if not node.parent:
-        return [node]
-    tree = solution(node.parent)
+        return [node], 0
+    tree, depth = solution(node.parent)
     tree.append(node)
-    return tree
+    return tree, depth+1
 
 
 def goal_test(node):
@@ -127,21 +127,41 @@ def get_misplaced_tiles(current_state):
     return misplaced_tiles
 
 
+def get_manhatten_distance(current_state):
+    total_manhatten_distance = 0
+    n = len(current_state.state)
+    for i in range(n):
+        for j in range(n):
+            row = None
+            column = None
+            value = current_state.state[i][j]
+            if value == -1:
+                row = 0
+                column = 0
+            else:
+                row = value // n
+                column = value % n
+            total_manhatten_distance = total_manhatten_distance + abs(row-i) + abs(column-j)
+    return total_manhatten_distance
+
+
 def get_actions(state):
     n = len(state)
+    position = None
     for i in range(n):
         for j in range(n):
             if state[i][j] == -1:
+                position = (i, j)
                 break
     actions = []
-    if i != n - 1:
-        actions.append("u")
-    if i != 0:
+    if position[0] != n - 1:
         actions.append("d")
-    if j != n - 1:
-        actions.append("l")
-    if j != 0:
+    if position[0] != 0:
+        actions.append("u")
+    if position[1] != n - 1:
         actions.append("r")
+    if position[1] != 0:
+        actions.append("l")
     return actions
 
 
@@ -173,16 +193,18 @@ def breadth_first_search(initial_state):
     frontier = deque()
     frontier.append(current_state)
     explored = set()
+    explored.add(current_state.__hash__())
     while True:
         if not frontier:
             return False
         current_state = frontier.popleft()
-        explored.add(current_state)
+        if goal_test(current_state):
+            return solution(current_state)
+        explored.add(current_state.__hash__())
         for action in current_state.actions:
             child = child_node(current_state, action)
-            if child not in explored and child not in frontier:
-                if goal_test(child):
-                    return solution(child)
+            if child.__hash__() not in explored:
+                explored.add(child.__hash__())
                 frontier.append(child)
 
 
@@ -297,11 +319,13 @@ def build_initial_state():
 if __name__ == ("__main__"):
     final_state = get_final_state(3)
     lst = build_initial_state()
-    # answers = breadth_first_search(lst)
+    answers, depth = breadth_first_search(lst)
     # answer = uniform_cost_search(lst)
     # answers = depth_limited_search(lst, 9)
     # answers = iterative_depth_limited_search(lst)
     # answers = greedy_best_first_search(lst)
-    answers = a_star(lst)
+    # answers = a_star(lst)
     for ans in answers:
-        print(ans)
+        print(ans, get_actions(ans.state))
+    print(depth)
+    # print(get_actions(lst.state))
