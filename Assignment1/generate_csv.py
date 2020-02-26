@@ -439,34 +439,27 @@ def choose_search_func():
 
 
 if __name__ == ("__main__"):
-    # final_state = get_final_state(3)
-    # lst = build_initial_state()
-    # answers, depth = breadth_first_search(lst)
-    # answer = uniform_cost_search(lst)
-    # answers = depth_limited_search(lst, 9)
-    # answers = iterative_depth_limited_search(lst)
-    # answers = greedy_best_first_search(lst)
-    # answers = a_star(lst)
-    # for ans in answers:
-    #     print(ans, get_actions(ans.state))
-    # print(depth)
-    # print(get_actions(lst.state))
-    explored_nodes = 0
-    # initial_state = start_system()
-    initial_state = Node(
-        state=np.array([[1, 2, 3], [4, 5, 6], [7, 8, -1]]),
-        n=3,
-        actions=get_actions(np.array([[1, 2, 3], [4, 5, 6], [7, 8, -1]])),
-        f_cost=0,
-    )
-    final_state = Node(state=np.array([[-1, 1, 2], [3, 4, 5], [6, 7, 8]]), f_cost=0)
-    func = choose_search_func()
-    then = datetime.now()
-    path, depth = func(initial_state=initial_state)
-    now = datetime.now()
-    print("total time taken:", (now - then).total_seconds(), "second(s)")
-    print("explored nodes:", explored_nodes)
-    print("solution depth:", depth)
-    for node in path:
-        print(node)
-        print("------------------------")
+    func_list = [depth_limited_search]
+    csv_list = ["bfs.csv", "ucs.csv","gbfs.csv","a*.csv","dls.csv","ids.csv"]
+    for l in range(1):
+        explored_nodes = 0
+        data_file = open("data.txt", "r")
+        output = open(csv_list[l],"w")
+        output.write("depth,time,nodes,generated depth\n")
+        lines = data_file.readlines()
+        final_state = Node(state=np.array([[-1, 1, 2], [3, 4, 5], [6, 7, 8]]), f_cost=0)
+        for i in range(20, 0, -1):
+            explored_nodes = 0
+            initial_array = []
+            for j in range(3):
+                z = lines[3*(20-i)+j]
+                x = [int(y) for y in z.split()]
+                initial_array.append(x)
+            actions = get_actions(initial_array)
+            initial_state =  Node(state=np.array(initial_array), actions=actions, n=3,)
+            then = datetime.now()
+            path, depth = func_list[l](initial_state=initial_state, limit=25)
+            now = datetime.now()
+            output.write(str(i)+","+str((now - then).total_seconds())+","+str(explored_nodes)+","+str(depth)+"\n")
+        data_file.close()
+        output.close()
